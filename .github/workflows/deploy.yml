@@ -1,4 +1,4 @@
-name: Full Stack CI
+name: Full Stack CI/CD
 
 on:
   push:
@@ -6,54 +6,80 @@ on:
       - main
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      # ======================
+      # Checkout
+      # ======================
 
+      - name: Checkout code
         uses: actions/checkout@v4
 
       # ======================
-      # Frontend React
+      # Frontend CI
       # ======================
 
       - name: Setup Node
-
         uses: actions/setup-node@v4
-
         with:
           node-version: 22
 
       - name: Install Frontend Dependencies
-
         run: cd frontend && npm install
 
       - name: Build React Application
-
         run: cd frontend && npm run build
 
       # ======================
-      # Backend Laravel
+      # Backend CI
       # ======================
 
       - name: Setup PHP
-
         uses: shivammathur/setup-php@v2
-
         with:
-          php-version: "8.4"
-
+          php-version: "8.5"
           extensions: mbstring, xml, ctype, fileinfo, openssl, pdo, pdo_mysql
 
       - name: Check PHP Version
-
         run: php -v
 
       - name: Install Laravel Dependencies
-
         run: cd backend && composer install --no-progress --prefer-dist --optimize-autoloader
 
       - name: Laravel Version Check
-
         run: cd backend && php artisan --version
+
+      # ======================
+      # Deploy to VPS
+      # ======================
+
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            cd /home/s20230204047/devops-deployment-practise
+
+            echo "Pulling latest code..."
+            git pull origin main
+
+            echo "Rebuilding frontend..."
+            sudo docker compose -f docker-compose.yml build frontend
+
+            echo "Rebuilding backend..."
+            sudo docker compose -f docker-compose.yml build backend
+
+            echo "Restarting frontend..."
+            sudo docker compose -f docker-compose.yml up -d frontend
+
+            echo "Restarting backend..."
+            sudo docker compose -f docker-compose.yml up -d backend
+
+            echo "Clearing Laravel cache..."
+            sudo docker exec deploy-backend php artisan optimize:clear
+
+            echo "Deployment completed!"
