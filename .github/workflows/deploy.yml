@@ -14,36 +14,46 @@ jobs:
 
         uses: actions/checkout@v4
 
-      # Frontend
+      # ======================
+      # Frontend React
+      # ======================
 
       - name: Setup Node
 
         uses: actions/setup-node@v4
 
         with:
-          node-version: 20
+          node-version: 22
 
-      - name: Install Frontend
+      - name: Install Frontend Dependencies
 
         run: cd frontend && npm install
 
-      - name: Build Frontend
+      - name: Build React Application
 
         run: cd frontend && npm run build
 
-      # Backend
+      # ======================
+      # Backend Laravel
+      # ======================
 
       - name: Setup PHP
 
         uses: shivammathur/setup-php@v2
 
         with:
-          php-version: 8.2
+          php-version: "8.4"
 
-      - name: Install Laravel
+          extensions: mbstring, xml, ctype, fileinfo, openssl, pdo, pdo_mysql
 
-        run: cd backend && composer install --no-progress
+      - name: Check PHP Version
 
-      - name: Laravel Check
+        run: php -v
+
+      - name: Install Laravel Dependencies
+
+        run: cd backend && composer install --no-progress --prefer-dist --optimize-autoloader
+
+      - name: Laravel Version Check
 
         run: cd backend && php artisan --version
