@@ -1,0 +1,39 @@
+services:
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: deploy-frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    stdin_open: true
+    tty: true
+
+  backend:
+    build:
+      context: ./backend
+    container_name: deploy-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/var/www
+    depends_on:
+      - mysql
+
+  mysql:
+    image: mysql:8.4
+    container_name: deploy-mysql
+    restart: always
+    environment:
+      MYSQL_DATABASE: deploy_lab
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+volumes:
+  mysql_data:
